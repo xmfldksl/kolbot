@@ -185,6 +185,18 @@ const Attack = {
    *  - option for based on spectype
    *  - option for based on enchant/aura
    */
+  /**
+   * Parse a Config.AttackSkill entry which may be a plain skill ID or a [skillId, slot] pair.
+   * @param {number | [number, number]} entry
+   * @returns {{ skill: number, slot: number }}
+   */
+  parseSkillEntry: function (entry) {
+    if (Array.isArray(entry)) {
+      return { skill: entry[0], slot: entry[1] };
+    }
+    return { skill: entry, slot: Attack.getPrimarySlot() };
+  },
+
   getCustomPreAttack: function (unit) {
     // Check if unit got invalidated
     if (!unit || !unit.name || !copyUnit(unit).x) return false;
