@@ -44,32 +44,41 @@
       }
 
       let index = (unit.isSpecial || unit.isPlayer) ? 1 : 3;
-      let attackSkill = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let attackEntry = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let { skill: attackSkill, slot: attackSlot } = Attack.parseSkillEntry(attackEntry);
 
       if (!Attack.checkResist(unit, attackSkill)) {
         attackSkill = -1;
+        attackSlot = Attack.getPrimarySlot();
 
-        if (Config.AttackSkill[index + 1] > -1 && Attack.checkResist(unit, Config.AttackSkill[index + 1])) {
-          attackSkill = Config.AttackSkill[index + 1];
+        let { skill: secSkill, slot: secSlot } = Attack.parseSkillEntry(Config.AttackSkill[index + 1]);
+        if (secSkill > -1 && Attack.checkResist(unit, secSkill)) {
+          attackSkill = secSkill;
+          attackSlot = secSlot;
         }
       }
 
       // Low mana skill
-      if (Skill.getManaCost(attackSkill) > me.mp
-        && Config.LowManaSkill[0] > -1
-        && Attack.checkResist(unit, Config.LowManaSkill[0])) {
-        attackSkill = Config.LowManaSkill[0];
+      if (Config.LowManaSkill[0] > -1
+        && Skill.getManaCost(attackSkill) > me.mp) {
+        let { skill: lmSkill, slot: lmSlot } = Attack.parseSkillEntry(Config.LowManaSkill[0]);
+        if (Attack.checkResist(unit, lmSkill)) {
+          attackSkill = lmSkill;
+          attackSlot = lmSlot;
+        }
       }
-      
+
       // low weapon-quantity -> use secondary skill if we can
       if (attackSkill === sdk.skills.DoubleThrow
         && (me.getWeaponQuantity() <= 3 || me.getWeaponQuantity(sdk.body.LeftArm) <= 3)
         && Skill.canUse(Config.AttackSkill[index + 1]) && Attack.checkResist(unit, Config.AttackSkill[index + 1])) {
-        attackSkill = Config.AttackSkill[index + 1];
+        let { skill: dtSec, slot: dtSecSlot } = Attack.parseSkillEntry(Config.AttackSkill[index + 1]);
+        attackSkill = dtSec;
+        attackSlot = dtSecSlot;
       }
 
       // Telestomp with barb is pointless
-      return this.doCast(unit, attackSkill);
+      return this.doCast(unit, attackSkill, attackSlot);
     },
 
     /**
@@ -91,7 +100,7 @@
     * @param {number} attackSkill 
     * @returns {AttackResult}
     */
-    doCast: function (unit, attackSkill = -1) {
+    doCast: function (unit, attackSkill = -1, slot = Attack.getPrimarySlot()) {
       if (attackSkill < 0) return Attack.Result.CANTATTACK;
       // check if unit became invalidated
       if (!unit || !unit.attackable) return Attack.Result.SUCCESS;
@@ -128,7 +137,10 @@
           }
         }
 
-        !unit.dead && Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
+        if (!unit.dead) {
+          me.weaponswitch !== slot && me.switchWeapons(slot);
+          Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
+        }
 
         return Attack.Result.SUCCESS;
       }

@@ -43,16 +43,22 @@
 
       // Low mana timed skill
       if (Config.LowManaSkill[0] > -1
-        && Skill.getManaCost(skills.timed) > me.mp
-        && Attack.checkResist(unit, Config.LowManaSkill[0])) {
-        skills.timed = Config.LowManaSkill[0];
+        && Skill.getManaCost(skills.timed) > me.mp) {
+        let { skill: lmTimed, slot: lmTimedSlot } = Attack.parseSkillEntry(Config.LowManaSkill[0]);
+        if (Attack.checkResist(unit, lmTimed)) {
+          skills.timed = lmTimed;
+          skills.timedSlot = lmTimedSlot;
+        }
       }
 
       // Low mana untimed skill
       if (Config.LowManaSkill[1] > -1
-        && Skill.getManaCost(skills.untimed) > me.mp
-        && Attack.checkResist(unit, Config.LowManaSkill[1])) {
-        skills.untimed = Config.LowManaSkill[1];
+        && Skill.getManaCost(skills.untimed) > me.mp) {
+        let { skill: lmUntimed, slot: lmUntimedSlot } = Attack.parseSkillEntry(Config.LowManaSkill[1]);
+        if (Attack.checkResist(unit, lmUntimed)) {
+          skills.untimed = lmUntimed;
+          skills.untimedSlot = lmUntimedSlot;
+        }
       }
 
       return skills;

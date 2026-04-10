@@ -2633,11 +2633,15 @@ const Attack = {
    * @returns {AttackResult}
    */
   doPreAttack: function (unit) {
-    const preAttackInfo = Attack.getCustomPreAttack(unit)
-      ? Attack.getCustomPreAttack(unit)
-      : [Config.AttackSkill[0], Attack.getPrimarySlot()];
-    preAttackInfo.length < 2 && preAttackInfo.push(Attack.getPrimarySlot());
-    const [skill, slot] = preAttackInfo;
+    const customPreAttack = Attack.getCustomPreAttack(unit);
+    let skill, slot;
+    if (customPreAttack) {
+      const preAttackInfo = customPreAttack;
+      preAttackInfo.length < 2 && preAttackInfo.push(Attack.getPrimarySlot());
+      [skill, slot] = preAttackInfo;
+    } else {
+      ({ skill, slot } = Attack.parseSkillEntry(Config.AttackSkill[0]));
+    }
     const cState = Skill.getState(skill);
 
     if (skill > 0

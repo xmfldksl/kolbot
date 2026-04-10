@@ -136,16 +136,20 @@
 
         // Low mana timed skill
         if (Config.LowManaSkill[0] > -1
-          && Skill.getManaCost(timedSkill) > me.mp
-          && Attack.checkResist(unit, Config.LowManaSkill[0])) {
-          timedSkill = Config.LowManaSkill[0];
+          && Skill.getManaCost(timedSkill) > me.mp) {
+          let { skill: lmTimed } = Attack.parseSkillEntry(Config.LowManaSkill[0]);
+          if (Attack.checkResist(unit, lmTimed)) {
+            timedSkill = lmTimed;
+          }
         }
 
         // Low mana untimed skill
         if (Config.LowManaSkill[1] > -1
-          && Skill.getManaCost(untimedSkill) > me.mp
-          && Attack.checkResist(unit, Config.LowManaSkill[1])) {
-          untimedSkill = Config.LowManaSkill[1];
+          && Skill.getManaCost(untimedSkill) > me.mp) {
+          let { skill: lmUntimed } = Attack.parseSkillEntry(Config.LowManaSkill[1]);
+          if (Attack.checkResist(unit, lmUntimed)) {
+            untimedSkill = lmUntimed;
+          }
         }
 
         // use our secondary skill if we can't use our primary

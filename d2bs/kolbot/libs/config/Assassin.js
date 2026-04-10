@@ -568,6 +568,12 @@ function LoadConfig () {
    * GOOD: Config.AttackSkill[1] = sdk.skills.FireBlast;
    * BAD: Config.AttackSkill[1] = -251;
    * BAD: Config.AttackSkill[1] = "FireBlast";
+   * You can also use array format [skillId, slot] to specify which weapon slot to use when casting:
+   *   slot 0 = main hand (default), slot 1 = swap (secondary weapon slot)
+   * GOOD: Config.AttackSkill[1] = [sdk.skills.FireBlast, 0];   // cast FireBlast using main hand slot
+   * GOOD: Config.AttackSkill[1] = [sdk.skills.DeathSentry, 1]; // cast DeathSentry using swap slot
+   * GOOD: Config.AttackSkill[1] = [251, 0];                    // numeric skillId with explicit slot
+   * NOTE: Single number format (e.g. = 251) still works and defaults to main hand slot (slot 0).
    */
   // Wereform setup. Make sure you read Templates/Attacks.txt for attack skill format.
   Config.Wereform = false; // 0 / false - don't shapeshift, 1 / "Werewolf" - change to werewolf, 2 / "Werebear" - change to werebear

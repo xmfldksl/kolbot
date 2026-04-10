@@ -48,47 +48,67 @@
 
       let mercRevive = 0;
       let timedSkill = -1;
+      let timedSlot = Attack.getPrimarySlot();
       let untimedSkill = -1;
+      let untimedSlot = Attack.getPrimarySlot();
       let index = (unit.isSpecial || unit.isPlayer) ? 1 : 3;
       let classid = unit.classid;
 
       // Get timed skill
-      let checkSkill = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let timedEntry = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let { skill: checkSkill, slot: checkSlot } = Attack.parseSkillEntry(timedEntry);
 
       if (Attack.checkResist(unit, checkSkill) && Attack.validSpot(unit.x, unit.y, checkSkill, classid)) {
         timedSkill = checkSkill;
-      } else if (Config.AttackSkill[5] > -1
-        && Attack.checkResist(unit, Config.AttackSkill[5])
-        && Attack.validSpot(unit.x, unit.y, Config.AttackSkill[5], classid)) {
-        timedSkill = Config.AttackSkill[5];
+        timedSlot = checkSlot;
+      } else {
+        let { skill: sec5, slot: sec5Slot } = Attack.parseSkillEntry(Config.AttackSkill[5]);
+        if (sec5 > -1
+          && Attack.checkResist(unit, sec5)
+          && Attack.validSpot(unit.x, unit.y, sec5, classid)) {
+          timedSkill = sec5;
+          timedSlot = sec5Slot;
+        }
       }
 
       // Get untimed skill
-      checkSkill = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[1] : Config.AttackSkill[index + 1];
+      let untimedEntry = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[1] : Config.AttackSkill[index + 1];
+      let { skill: checkUntimed, slot: checkUntimedSlot } = Attack.parseSkillEntry(untimedEntry);
 
-      if (Attack.checkResist(unit, checkSkill) && Attack.validSpot(unit.x, unit.y, checkSkill, classid)) {
-        untimedSkill = checkSkill;
-      } else if (Config.AttackSkill[6] > -1
-        && Attack.checkResist(unit, Config.AttackSkill[6])
-        && Attack.validSpot(unit.x, unit.y, Config.AttackSkill[6], classid)) {
-        untimedSkill = Config.AttackSkill[6];
+      if (Attack.checkResist(unit, checkUntimed) && Attack.validSpot(unit.x, unit.y, checkUntimed, classid)) {
+        untimedSkill = checkUntimed;
+        untimedSlot = checkUntimedSlot;
+      } else {
+        let { skill: sec6, slot: sec6Slot } = Attack.parseSkillEntry(Config.AttackSkill[6]);
+        if (sec6 > -1
+          && Attack.checkResist(unit, sec6)
+          && Attack.validSpot(unit.x, unit.y, sec6, classid)) {
+          untimedSkill = sec6;
+          untimedSlot = sec6Slot;
+        }
       }
 
       // Low mana timed skill
       if (Config.LowManaSkill[0] > -1
-        && Skill.getManaCost(timedSkill) > me.mp
-        && Attack.checkResist(unit, Config.LowManaSkill[0])) {
-        timedSkill = Config.LowManaSkill[0];
+        && Skill.getManaCost(timedSkill) > me.mp) {
+        let { skill: lmTimed, slot: lmTimedSlot } = Attack.parseSkillEntry(Config.LowManaSkill[0]);
+        if (Attack.checkResist(unit, lmTimed)) {
+          timedSkill = lmTimed;
+          timedSlot = lmTimedSlot;
+        }
       }
 
       // Low mana untimed skill
       if (Config.LowManaSkill[1] > -1
-        && Skill.getManaCost(untimedSkill) > me.mp
-        && Attack.checkResist(unit, Config.LowManaSkill[1])) {
-        untimedSkill = Config.LowManaSkill[1];
+        && Skill.getManaCost(untimedSkill) > me.mp) {
+        let { skill: lmUntimed, slot: lmUntimedSlot } = Attack.parseSkillEntry(Config.LowManaSkill[1]);
+        if (Attack.checkResist(unit, lmUntimed)) {
+          untimedSkill = lmUntimed;
+          untimedSlot = lmUntimedSlot;
+        }
       }
 
-      let result = this.doCast(unit, timedSkill, untimedSkill);
+      let result = this.doCast(unit, timedSkill, timedSlot, untimedSkill, untimedSlot);
 
       if (result === Attack.Result.CANTATTACK && Attack.canTeleStomp(unit)) {
         let merc = me.getMerc();
@@ -117,7 +137,7 @@
           }
 
           let closeMob = Attack.getNearestMonster({ skipGid: gid });
-          !!closeMob && this.doCast(closeMob, timedSkill, untimedSkill);
+          !!closeMob && this.doCast(closeMob, timedSkill, timedSlot, untimedSkill, untimedSlot);
         }
 
         return Attack.Result.SUCCESS;
@@ -136,7 +156,7 @@
      * @param {number} untimedSkill 
      * @returns {AttackResult}
      */
-    doCast: function (unit, timedSkill = -1, untimedSkill = -1) {
+    doCast: function (unit, timedSkill = -1, timedSlot = Attack.getPrimarySlot(), untimedSkill = -1, untimedSlot = Attack.getPrimarySlot()) {
       // No valid skills can be found
       if (timedSkill < 0 && untimedSkill < 0) return Attack.Result.CANTATTACK;
       // unit became invalidated
@@ -156,7 +176,10 @@
           }
 
           // Randomized x coord changes tornado path and prevents constant missing
-          !unit.dead && Skill.cast(timedSkill, Skill.getHand(timedSkill), unit.x + rand(-2, 2), unit.y);
+          if (!unit.dead) {
+            me.weaponswitch !== timedSlot && me.switchWeapons(timedSlot);
+            Skill.cast(timedSkill, Skill.getHand(timedSkill), unit.x + rand(-2, 2), unit.y);
+          }
 
           return Attack.Result.SUCCESS;
         default:
@@ -176,7 +199,10 @@
             }
           }
 
-          !unit.dead && Skill.cast(timedSkill, Skill.getHand(timedSkill), unit);
+          if (!unit.dead) {
+            me.weaponswitch !== timedSlot && me.switchWeapons(timedSlot);
+            Skill.cast(timedSkill, Skill.getHand(timedSkill), unit);
+          }
 
           return Attack.Result.SUCCESS;
         }
@@ -199,7 +225,10 @@
           }
         }
 
-        !unit.dead && Skill.cast(untimedSkill, Skill.getHand(untimedSkill), unit);
+        if (!unit.dead) {
+          me.weaponswitch !== untimedSlot && me.switchWeapons(untimedSlot);
+          Skill.cast(untimedSkill, Skill.getHand(untimedSkill), unit);
+        }
 
         return Attack.Result.SUCCESS;
       }
