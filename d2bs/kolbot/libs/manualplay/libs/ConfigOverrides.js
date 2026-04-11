@@ -25,6 +25,8 @@ includeIfNotIncluded("core/Config.js");
     }))(className, me.profile, me.charname, me.realm);
     let configFilename = "";
 
+    let configPath = ""; // "manualplay" or "config"
+
     for (let i = 0; i < 5; i++) {
       switch (i) {
       case 0: // Custom config
@@ -46,14 +48,28 @@ includeIfNotIncluded("core/Config.js");
         break;
       }
 
-      if (configFilename && FileTools.exists("libs/manualplay/config/" + configFilename)) {
-        break;
+      if (configFilename) {
+        if (FileTools.exists("libs/manualplay/config/" + configFilename)) {
+          configPath = "manualplay";
+          break;
+        } else if (FileTools.exists("libs/config/" + configFilename)) {
+          configPath = "config";
+          break;
+        }
       }
     }
 
-    if (FileTools.exists("libs/manualplay/config/" + configFilename)) {
+    if (configPath === "manualplay") {
       try {
         if (!include("manualplay/config/" + configFilename)) {
+          throw new Error();
+        }
+      } catch (e1) {
+        throw new Error("Failed to load character config.");
+      }
+    } else if (configPath === "config") {
+      try {
+        if (!include("config/" + configFilename)) {
           throw new Error();
         }
       } catch (e1) {
@@ -66,14 +82,17 @@ includeIfNotIncluded("core/Config.js");
       }
 
       try {
-        // Try to find default config
-        if (!FileTools.exists("libs/manualplay/config/" + className + ".js")) {
+        if (FileTools.exists("libs/manualplay/config/" + className + ".js")) {
+          if (!include("manualplay/config/" + className + ".js")) {
+            throw new Error("ÿc1Failed to load default config.");
+          }
+        } else if (FileTools.exists("libs/config/" + className + ".js")) {
+          if (!include("config/" + className + ".js")) {
+            throw new Error("ÿc1Failed to load default config.");
+          }
+        } else {
           D2Bot.printToConsole("Not going well? Read the guides: https://github.com/blizzhackers/documentation");
           throw new Error("ÿc1Default config not found. \nÿc9     Try reading the kolbot guides.");
-        }
-
-        if (!include("manualplay/config/" + className + ".js")) {
-          throw new Error("ÿc1Failed to load default config.");
         }
       } catch (e) {
         console.log(e);
