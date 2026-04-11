@@ -56,7 +56,7 @@ const Attack = {
       ClassAttack.load(me.classid);
     }
 
-    if (notify && (Config.AttackSkill[1] < 0 || Config.AttackSkill[3] < 0)) {
+    if (notify && (this.parseSkillEntry(Config.AttackSkill[1]).skill < 0 || this.parseSkillEntry(Config.AttackSkill[3]).skill < 0)) {
       showConsole();
       console.warn(
         "ÿc1Bad attack config. Don't expect your bot to attack." + "\n"
