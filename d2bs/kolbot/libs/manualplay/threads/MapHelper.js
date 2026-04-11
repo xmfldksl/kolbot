@@ -72,7 +72,7 @@ function main () {
   };
 
   Config.init();
-  Attack.init(true);
+  Attack.init(false);
   Pickit.init();
   Storage.Init();
   Runewords.init();
