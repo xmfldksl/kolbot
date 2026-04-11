@@ -13,32 +13,44 @@
 
     /** @param {Monster} unit */
     decideSkill: function (unit) {
-      let skills = { timed: -1, untimed: -1 };
+      let skills = { timed: -1, timedSlot: Attack.getPrimarySlot(), untimed: -1, untimedSlot: Attack.getPrimarySlot() };
       if (!unit) return skills;
 
       let index = (unit.isSpecial || unit.isPlayer) ? 1 : 3;
       let classid = unit.classid;
 
       // Get timed skill
-      let checkSkill = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let timedEntry = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[0] : Config.AttackSkill[index];
+      let { skill: checkSkill, slot: checkSlot } = Attack.parseSkillEntry(timedEntry);
 
       if (Attack.checkResist(unit, checkSkill) && Attack.validSpot(unit.x, unit.y, checkSkill, classid)) {
         skills.timed = checkSkill;
-      } else if (Config.AttackSkill[5] > -1
-        && Attack.checkResist(unit, Config.AttackSkill[5])
-        && Attack.validSpot(unit.x, unit.y, Config.AttackSkill[5], classid)) {
-        skills.timed = Config.AttackSkill[5];
+        skills.timedSlot = checkSlot;
+      } else {
+        let { skill: sec5, slot: sec5Slot } = Attack.parseSkillEntry(Config.AttackSkill[5]);
+        if (sec5 > -1
+          && Attack.checkResist(unit, sec5)
+          && Attack.validSpot(unit.x, unit.y, sec5, classid)) {
+          skills.timed = sec5;
+          skills.timedSlot = sec5Slot;
+        }
       }
 
       // Get untimed skill
-      checkSkill = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[1] : Config.AttackSkill[index + 1];
+      let untimedEntry = Attack.getCustomAttack(unit) ? Attack.getCustomAttack(unit)[1] : Config.AttackSkill[index + 1];
+      let { skill: checkUntimed, slot: checkUntimedSlot } = Attack.parseSkillEntry(untimedEntry);
 
-      if (Attack.checkResist(unit, checkSkill) && Attack.validSpot(unit.x, unit.y, checkSkill)) {
-        skills.untimed = checkSkill;
-      } else if (Config.AttackSkill[6] > -1
-        && Attack.checkResist(unit, Config.AttackSkill[6])
-        && Attack.validSpot(unit.x, unit.y, Config.AttackSkill[6], classid)) {
-        skills.untimed = Config.AttackSkill[6];
+      if (Attack.checkResist(unit, checkUntimed) && Attack.validSpot(unit.x, unit.y, checkUntimed, classid)) {
+        skills.untimed = checkUntimed;
+        skills.untimedSlot = checkUntimedSlot;
+      } else {
+        let { skill: sec6, slot: sec6Slot } = Attack.parseSkillEntry(Config.AttackSkill[6]);
+        if (sec6 > -1
+          && Attack.checkResist(unit, sec6)
+          && Attack.validSpot(unit.x, unit.y, sec6, classid)) {
+          skills.untimed = sec6;
+          skills.untimedSlot = sec6Slot;
+        }
       }
 
       // Low mana timed skill
@@ -124,7 +136,7 @@
 
       let mercRevive = 0;
       let skills = this.decideSkill(unit);
-      let result = this.doCast(unit, skills.timed, skills.untimed);
+      let result = this.doCast(unit, skills.timed, skills.timedSlot, skills.untimed, skills.untimedSlot);
 
       if (result === Attack.Result.CANTATTACK && Attack.canTeleStomp(unit)) {
         let merc = me.getMerc();
@@ -156,7 +168,7 @@
           
           if (!!closeMob) {
             let findSkill = this.decideSkill(closeMob);
-            if (this.doCast(closeMob, findSkill.timed, findSkill.untimed) !== Attack.Result.SUCCESS) {
+            if (this.doCast(closeMob, findSkill.timed, findSkill.timedSlot, findSkill.untimed, findSkill.untimedSlot) !== Attack.Result.SUCCESS) {
               (Skill.canUse(sdk.skills.Decoy) && Skill.cast(sdk.skills.Decoy, sdk.skills.hand.Right, unit));
             }
           }
@@ -180,14 +192,18 @@
     },
 
     /**
-    * @param {Monster | Player} unit 
-    * @param {number} timedSkill 
-    * @param {number} untimedSkill 
+    * @param {Monster | Player} unit
+    * @param {number} timedSkill
+    * @param {number} timedSlot
+    * @param {number} untimedSkill
+    * @param {number} untimedSlot
     * @returns {AttackResult} 0 - fail, 1 - success, 2 - no valid attack skills
     */
-    doCast: function (unit, timedSkill = -1, untimedSkill = -1) {
+    doCast: function (unit, timedSkill = -1, timedSlot = Attack.getPrimarySlot(), untimedSkill = -1, untimedSlot = Attack.getPrimarySlot()) {
       // No valid skills can be found
       if (timedSkill < 0 && untimedSkill < 0) return Attack.Result.CANTATTACK;
+      // unit became invalidated
+      if (!unit || !unit.attackable) return Attack.Result.SUCCESS;
       Config.TeleSwitch && me.switchToPrimary();
       
       // Arrow/bolt check
@@ -214,8 +230,11 @@
               }
             }
 
-            if (!unit.dead && Skill.cast(timedSkill, Skill.getHand(timedSkill), unit)) {
-              ClassAttack.lightFuryTick = getTickCount();
+            if (!unit.dead) {
+              me.weaponswitch !== timedSlot && me.switchWeapons(timedSlot);
+              if (Skill.cast(timedSkill, Skill.getHand(timedSkill), unit)) {
+                ClassAttack.lightFuryTick = getTickCount();
+              }
             }
 
             return Attack.Result.SUCCESS;
@@ -239,7 +258,10 @@
             }
           }
 
-          !unit.dead && Skill.cast(timedSkill, Skill.getHand(timedSkill), unit);
+          if (!unit.dead) {
+            me.weaponswitch !== timedSlot && me.switchWeapons(timedSlot);
+            Skill.cast(timedSkill, Skill.getHand(timedSkill), unit);
+          }
 
           return Attack.Result.SUCCESS;
         }
@@ -262,7 +284,10 @@
           }
         }
 
-        !unit.dead && Skill.cast(untimedSkill, Skill.getHand(untimedSkill), unit);
+        if (!unit.dead) {
+          me.weaponswitch !== untimedSlot && me.switchWeapons(untimedSlot);
+          Skill.cast(untimedSkill, Skill.getHand(untimedSkill), unit);
+        }
 
         return Attack.Result.SUCCESS;
       }

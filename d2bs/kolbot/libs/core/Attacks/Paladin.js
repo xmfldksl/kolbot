@@ -43,12 +43,15 @@
 
       let mercRevive = 0;
       let [attackSkill, aura] = [-1, -1];
+      let slot = Attack.getPrimarySlot();
       const index = (unit.isSpecial || unit.isPlayer) ? 1 : 3;
 
       if (Attack.getCustomAttack(unit)) {
-        [attackSkill, aura] = Attack.getCustomAttack(unit);
+        let customAttack = Attack.getCustomAttack(unit);
+        ({ skill: attackSkill, slot } = Attack.parseSkillEntry(customAttack[0]));
+        aura = customAttack[1];
       } else {
-        attackSkill = Config.AttackSkill[index];
+        ({ skill: attackSkill, slot } = Attack.parseSkillEntry(Config.AttackSkill[index]));
         aura = Config.AttackSkill[index + 1];
       }
 
@@ -65,7 +68,7 @@
               ? Config.AttackSkill[6]
               : Config.AttackSkill[5]);
             if (Attack.checkResist(unit, _check)) {
-              attackSkill = Config.AttackSkill[5];
+              ({ skill: attackSkill, slot } = Attack.parseSkillEntry(Config.AttackSkill[5]));
               aura = Config.AttackSkill[6];
             }
           }
@@ -78,14 +81,14 @@
 
           // Set to secondary if not immune
           if (Config.AttackSkill[5] > -1 && Attack.checkResist(unit, Config.AttackSkill[5])) {
-            attackSkill = Config.AttackSkill[5];
+            ({ skill: attackSkill, slot } = Attack.parseSkillEntry(Config.AttackSkill[5]));
             aura = Config.AttackSkill[6];
           } else if (
             Config.AttackSkill.length === 9
             && Config.AttackSkill[7] > -1
             && Attack.checkResist(unit, Config.AttackSkill[7])
           ) {
-            attackSkill = Config.AttackSkill[7];
+            ({ skill: attackSkill, slot } = Attack.parseSkillEntry(Config.AttackSkill[7]));
             aura = Config.AttackSkill[8];
           }
         }
@@ -96,9 +99,10 @@
         && Skill.getManaCost(attackSkill) > me.mp
         && Attack.checkResist(unit, Config.LowManaSkill[0])) {
         [attackSkill, aura] = Config.LowManaSkill;
+        ({ skill: attackSkill, slot } = Attack.parseSkillEntry(attackSkill));
       }
 
-      let result = this.doCast(unit, attackSkill, aura);
+      let result = this.doCast(unit, attackSkill, slot, aura);
 
       if (result === Attack.Result.CANTATTACK && Attack.canTeleStomp(unit)) {
         let merc = me.getMerc();
@@ -127,7 +131,7 @@
           }
 
           let closeMob = Attack.getNearestMonster({ skipGid: gid });
-          !!closeMob && this.doCast(closeMob, attackSkill, aura);
+          !!closeMob && this.doCast(closeMob, attackSkill, slot, aura);
         }
 
         return Attack.Result.SUCCESS;
@@ -164,11 +168,12 @@
     },
 
     /**
-     * @param {Monster} unit 
-     * @param {number} attackSkill 
-     * @param {number} aura 
+     * @param {Monster} unit
+     * @param {number} attackSkill
+     * @param {number} slot
+     * @param {number} aura
      */
-    doCast: function (unit, attackSkill = -1, aura = -1) {
+    doCast: function (unit, attackSkill = -1, slot = Attack.getPrimarySlot(), aura = -1) {
       if (attackSkill < 0) return Attack.Result.CANTATTACK;
       // unit became invalidated
       if (!unit || !unit.attackable) return Attack.Result.SUCCESS;
@@ -180,6 +185,7 @@
         if (Config.AvoidDolls && unit.isDoll) {
           this.dollAvoid(unit);
           aura > -1 && Skill.setSkill(aura, sdk.skills.hand.Right);
+          me.weaponswitch !== slot && me.switchWeapons(slot);
           Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
 
           return Attack.Result.SUCCESS;
@@ -192,7 +198,8 @@
           if (Config.AttackSkill[5] > -1
             && Config.AttackSkill[5] !== sdk.skills.BlessedHammer
             && Attack.checkResist(unit, Config.AttackSkill[5])) {
-            return this.doCast(unit, Config.AttackSkill[5], Config.AttackSkill[6]);
+            let { skill: sec5, slot: sec5Slot } = Attack.parseSkillEntry(Config.AttackSkill[5]);
+            return this.doCast(unit, sec5, sec5Slot, Config.AttackSkill[6]);
           }
 
           return Attack.Result.FAILED;
@@ -201,6 +208,7 @@
         if (unit.distance > 9 || !unit.attackable) return Attack.Result.SUCCESS;
 
         aura > -1 && Skill.setSkill(aura, sdk.skills.hand.Right);
+        me.weaponswitch !== slot && me.switchWeapons(slot);
 
         for (let i = 0; i < 3; i += 1) {
           Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
@@ -228,6 +236,7 @@
 
         if (!unit.dead) {
           aura > -1 && Skill.setSkill(aura, sdk.skills.hand.Right);
+          me.weaponswitch !== slot && me.switchWeapons(slot);
           Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
         }
 
@@ -243,6 +252,7 @@
 
           if (!unit.dead) {
             aura > -1 && Skill.setSkill(aura, sdk.skills.hand.Right);
+            me.weaponswitch !== slot && me.switchWeapons(slot);
             Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
 
             return Attack.Result.SUCCESS;
@@ -293,6 +303,7 @@
 
         if (!unit.dead) {
           aura > -1 && Skill.setSkill(aura, sdk.skills.hand.Right);
+          me.weaponswitch !== slot && me.switchWeapons(slot);
           Skill.cast(attackSkill, Skill.getHand(attackSkill), unit);
         }
 
