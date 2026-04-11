@@ -2278,7 +2278,7 @@ const Attack = {
    * @param {number} maxres 
    * @returns {boolean}
    */
-  checkResist: function (unit, val, maxres = 100) {
+  checkResist: function (unit, val, maxres = 80) {
     if (!unit || !unit.type || unit.isPlayer) return true;
 
     const damageType = typeof val === "number" ? this.getSkillElement(val) : val;
