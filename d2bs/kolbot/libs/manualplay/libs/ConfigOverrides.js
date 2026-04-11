@@ -76,11 +76,6 @@ includeIfNotIncluded("core/Config.js");
         throw new Error("Failed to load character config.");
       }
     } else {
-      if (notify) {
-        console.log("ÿc1" + className + "." + me.charname + ".js not found!"); // Use the primary format
-        console.log("ÿc1Loading default config.");
-      }
-
       try {
         if (FileTools.exists("libs/manualplay/config/" + className + ".js")) {
           if (!include("manualplay/config/" + className + ".js")) {
