@@ -207,10 +207,11 @@
       Config.TeleSwitch && me.switchToPrimary();
       
       // Arrow/bolt check
-      if (this.bowCheck) {
+      const bowCheck = Attack.usingBow();
+      if (bowCheck) {
         switch (true) {
-        case this.bowCheck === "bow" && !me.getItem("aqv", sdk.items.mode.Equipped):
-        case this.bowCheck === "crossbow" && !me.getItem("cqv", sdk.items.mode.Equipped):
+        case bowCheck === "bow" && !me.getItem("aqv", sdk.items.mode.Equipped):
+        case bowCheck === "crossbow" && !me.getItem("cqv", sdk.items.mode.Equipped):
           console.log("Bow check");
           Town.visitTown();
 

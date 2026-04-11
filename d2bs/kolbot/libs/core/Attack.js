@@ -2398,11 +2398,15 @@ const Attack = {
    * @returns {string | false}
    */
   usingBow: function () {
+    const bowSlots = [
+      sdk.body.RightArm, sdk.body.LeftArm,
+      sdk.body.RightArmSecondary, sdk.body.LeftArmSecondary
+    ];
     let item = me.getItem(-1, sdk.items.mode.Equipped);
 
     if (item) {
       do {
-        if (item.isOnMain) {
+        if (bowSlots.includes(item.bodylocation)) {
           switch (item.itemType) {
           case sdk.items.type.Bow:
           case sdk.items.type.AmazonBow:
