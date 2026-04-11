@@ -22,7 +22,7 @@ function main () {
   console.log("ÿc9Pick Thread Loaded.");
   Config.init(false);
   Pickit.init(false);
-  Attack.init();
+  Attack.init(false);
   Storage.Init();
   CraftingSystem.buildLists();
   Runewords.init();
