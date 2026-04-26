@@ -1355,6 +1355,7 @@ const Town = {
         npc = Town.initNPC("Repair", "repair");
         if (!npc) return false;
         me.repair();
+        me.cancelUIFlags();
 
         break;
       case "buyQuiver": {
@@ -1425,11 +1426,13 @@ const Town = {
           npc = Town.initNPC("Repair", "repair");
           let quiverItem = npc && npc.getItem(quiverType[bowType]);
           if (!quiverItem || !quiverItem.buy()) {
+            me.cancelUIFlags();
             me.switchWeapons(originalSlot);
             continue;
           }
 
-          // 6. Restore original slot
+          // 6. Close shop UI before weapon switch to prevent crash
+          me.cancelUIFlags();
           me.switchWeapons(originalSlot);
         }
 
