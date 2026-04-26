@@ -581,61 +581,27 @@ me.needRepair = function () {
     me.cancel();
   }
   const canAfford = me.gold >= me.getRepairCost();
+  const quiverType = { bow: "aqv", crossbow: "cqv" };
 
-  // Arrow/Bolt check - each weapon slot independently
-  const weaponSlots = [
-    { weaponLoc: sdk.body.RightArm, quiverLoc: sdk.body.LeftArm },
-    { weaponLoc: sdk.body.RightArmSecondary, quiverLoc: sdk.body.LeftArmSecondary },
-  ];
-  let needsBuyQuiver = false;
+  // Arrow/Bolt check
+  const bowCheck = Attack.usingBow();
 
-  for (let i = 0; i < weaponSlots.length; i++) {
-    let slot = weaponSlots[i];
-    let bowType = false;
-    let item = me.getItem(-1, sdk.items.mode.Equipped);
-    if (item) {
-      do {
-        if (item.bodylocation === slot.weaponLoc) {
-          switch (item.itemType) {
-          case sdk.items.type.Bow:
-          case sdk.items.type.AmazonBow:
-            bowType = "bow";
-            break;
-          case sdk.items.type.Crossbow:
-            bowType = "crossbow";
-            break;
-          }
-          break;
-        }
-      } while (item.getNext());
+  if (bowCheck) {
+    let quiver;
+    if (quiverType[bowCheck]) {
+      quiver = me.getItem(quiverType[bowCheck], sdk.items.mode.Equipped);
     }
 
-    if (!bowType) continue;
-
-    let quiver = null;
-    let qItem = me.getItem(-1, sdk.items.mode.Equipped);
-    if (qItem) {
-      do {
-        if (qItem.bodylocation === slot.quiverLoc) {
-          quiver = qItem;
-          break;
-        }
-      } while (qItem.getNext());
-    }
-
-    if (!quiver) {
-      needsBuyQuiver = true;
+    if (!quiver) { // Out of arrows/bolts
+      repairAction.push("buyQuiver");
     } else {
       let quantity = quiver.getStat(sdk.stats.Quantity);
+
       if (typeof quantity === "number"
         && quantity * 100 / getBaseStat("items", quiver.classid, "maxstack") <= Config.RepairPercent) {
-        needsBuyQuiver = true;
+        repairAction.push("buyQuiver");
       }
     }
-  }
-
-  if (needsBuyQuiver) {
-    repairAction.push("buyQuiver");
   }
 
   // Repair durability/quantity/charges

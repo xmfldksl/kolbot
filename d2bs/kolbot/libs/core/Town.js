@@ -1355,89 +1355,24 @@ const Town = {
         npc = Town.initNPC("Repair", "repair");
         if (!npc) return false;
         me.repair();
-        me.cancelUIFlags();
 
         break;
-      case "buyQuiver": {
-        const weaponSlots = [
-          { slot: sdk.player.slot.Main, weaponLoc: sdk.body.RightArm, quiverLoc: sdk.body.LeftArm },
-          { slot: sdk.player.slot.Secondary, weaponLoc: sdk.body.RightArmSecondary, quiverLoc: sdk.body.LeftArmSecondary },
-        ];
-        const quiverType = { bow: "aqv", crossbow: "cqv" };
-        const originalSlot = me.weaponswitch;
+      case "buyQuiver":
+        let bowCheck = Attack.usingBow();
 
-        for (let i = 0; i < weaponSlots.length; i++) {
-          let slotInfo = weaponSlots[i];
-          // 1. Find bow type in this slot
-          let bowType = null;
-          let wItem = me.getItem(-1, sdk.items.mode.Equipped);
-          if (wItem) {
-            do {
-              if (wItem.bodylocation === slotInfo.weaponLoc) {
-                switch (wItem.itemType) {
-                case sdk.items.type.Bow:
-                case sdk.items.type.AmazonBow:
-                  bowType = "bow";
-                  break;
-                case sdk.items.type.Crossbow:
-                  bowType = "crossbow";
-                  break;
-                }
-                break;
-              }
-            } while (wItem.getNext());
-          }
-          if (!bowType) continue;
-
-          // 2. Check quiver quantity — skip if sufficient
-          let existingQuiver = null;
-          let qItem = me.getItem(-1, sdk.items.mode.Equipped);
-          if (qItem) {
-            do {
-              if (qItem.bodylocation === slotInfo.quiverLoc) {
-                existingQuiver = qItem;
-                break;
-              }
-            } while (qItem.getNext());
-          }
-          if (existingQuiver) {
-            let quantity = existingQuiver.getStat(sdk.stats.Quantity);
-            if (typeof quantity === "number"
-              && quantity * 100 / getBaseStat("items", existingQuiver.classid, "maxstack") > Config.RepairPercent) {
-              continue;
-            }
-          }
-
-          // 3. Switch to this slot explicitly
-          if (!me.switchWeapons(slotInfo.slot)) continue;
-
-          // 4. Drop existing quiver if present
-          let dropItem = me.getItem(-1, sdk.items.mode.Equipped);
-          if (dropItem) {
-            do {
-              if (dropItem.bodylocation === slotInfo.quiverLoc) {
-                dropItem.drop();
-                break;
-              }
-            } while (dropItem.getNext());
-          }
-
-          // 5. Buy quiver from NPC
+        if (bowCheck) {
+          let quiver = bowCheck === "bow" ? "aqv" : "cqv";
+          let myQuiver = me.getItem(quiver, sdk.items.mode.Equipped);
+          !!myQuiver && myQuiver.drop();
+          
           npc = Town.initNPC("Repair", "repair");
-          let quiverItem = npc && npc.getItem(quiverType[bowType]);
-          if (!quiverItem || !quiverItem.buy()) {
-            me.cancelUIFlags();
-            me.switchWeapons(originalSlot);
-            continue;
-          }
+          if (!npc) return false;
 
-          // 6. Close shop UI before weapon switch to prevent crash
-          me.cancelUIFlags();
-          me.switchWeapons(originalSlot);
+          quiver = npc.getItem(quiver);
+          !!quiver && quiver.buy();
         }
 
         break;
-      }
       }
     }
 
