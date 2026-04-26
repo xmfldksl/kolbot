@@ -1423,7 +1423,8 @@ const Town = {
 
           // 5. Buy quiver from NPC
           npc = Town.initNPC("Repair", "repair");
-          if (!npc || !npc.getItem(quiverType[bowType])?.buy()) {
+          var quiverItem = npc && npc.getItem(quiverType[bowType]);
+          if (!npc || !quiverItem || !quiverItem.buy()) {
             me.switchWeapons(originalSlot);
             continue;
           }
