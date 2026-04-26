@@ -1365,7 +1365,8 @@ const Town = {
         const quiverType = { bow: "aqv", crossbow: "cqv" };
         const originalSlot = me.weaponswitch;
 
-        for (const slotInfo of weaponSlots) {
+        for (let i = 0; i < weaponSlots.length; i++) {
+          let slotInfo = weaponSlots[i];
           // 1. Find bow type in this slot
           let bowType = null;
           let wItem = me.getItem(-1, sdk.items.mode.Equipped);

@@ -589,7 +589,8 @@ me.needRepair = function () {
   ];
   let needsBuyQuiver = false;
 
-  for (const slot of weaponSlots) {
+  for (let i = 0; i < weaponSlots.length; i++) {
+    let slot = weaponSlots[i];
     let bowType = false;
     let item = me.getItem(-1, sdk.items.mode.Equipped);
     if (item) {
