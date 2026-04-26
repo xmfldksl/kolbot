@@ -581,27 +581,60 @@ me.needRepair = function () {
     me.cancel();
   }
   const canAfford = me.gold >= me.getRepairCost();
-  const quiverType = { bow: "aqv", crossbow: "cqv" };
 
-  // Arrow/Bolt check
-  const bowCheck = Attack.usingBow();
+  // Arrow/Bolt check - each weapon slot independently
+  const weaponSlots = [
+    { weaponLoc: sdk.body.RightArm, quiverLoc: sdk.body.LeftArm },
+    { weaponLoc: sdk.body.RightArmSecondary, quiverLoc: sdk.body.LeftArmSecondary },
+  ];
+  let needsBuyQuiver = false;
 
-  if (bowCheck) {
-    let quiver;
-    if (quiverType[bowCheck]) {
-      quiver = me.getItem(quiverType[bowCheck], sdk.items.mode.Equipped);
+  for (const slot of weaponSlots) {
+    let bowType = false;
+    let item = me.getItem(-1, sdk.items.mode.Equipped);
+    if (item) {
+      do {
+        if (item.bodylocation === slot.weaponLoc) {
+          switch (item.itemType) {
+          case sdk.items.type.Bow:
+          case sdk.items.type.AmazonBow:
+            bowType = "bow";
+            break;
+          case sdk.items.type.Crossbow:
+            bowType = "crossbow";
+            break;
+          }
+          break;
+        }
+      } while (item.getNext());
     }
 
-    if (!quiver) { // Out of arrows/bolts
-      repairAction.push("buyQuiver");
+    if (!bowType) continue;
+
+    let quiver = null;
+    let qItem = me.getItem(-1, sdk.items.mode.Equipped);
+    if (qItem) {
+      do {
+        if (qItem.bodylocation === slot.quiverLoc) {
+          quiver = qItem;
+          break;
+        }
+      } while (qItem.getNext());
+    }
+
+    if (!quiver) {
+      needsBuyQuiver = true;
     } else {
       let quantity = quiver.getStat(sdk.stats.Quantity);
-
       if (typeof quantity === "number"
         && quantity * 100 / getBaseStat("items", quiver.classid, "maxstack") <= Config.RepairPercent) {
-        repairAction.push("buyQuiver");
+        needsBuyQuiver = true;
       }
     }
+  }
+
+  if (needsBuyQuiver) {
+    repairAction.push("buyQuiver");
   }
 
   // Repair durability/quantity/charges
