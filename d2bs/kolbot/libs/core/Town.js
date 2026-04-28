@@ -1346,6 +1346,8 @@ const Town = {
     let repairAction = me.needRepair();
     force && repairAction.indexOf("repair") === -1 && repairAction.push("repair");
 
+    console.log("[Town.repair] repairAction=" + JSON.stringify(repairAction));
+
     if (!repairAction || !repairAction.length) return true;
 
     for (let i = 0; i < repairAction.length; i++) {
