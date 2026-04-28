@@ -1387,6 +1387,7 @@ const Town = {
           if (!bowType) break;
 
           let quiverCode = bowType === "bow" ? "aqv" : "cqv";
+          console.log("[buyQuiver] targetSlot=" + targetSlot + " bowType=" + bowType + " quiverCode=" + quiverCode);
           let myQuiver = null;
           equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
@@ -1399,12 +1400,14 @@ const Town = {
             } while (equipped.getNext());
           }
 
+          console.log("[buyQuiver] myQuiver before drop: " + (myQuiver ? myQuiver.name + " (gid=" + myQuiver.gid + ")" : "none"));
           if (myQuiver) myQuiver.drop();
 
           npc = Town.initNPC("Repair", "repair");
           if (!npc) return false;
 
           let buyItem = npc.getItem(quiverCode);
+          console.log("[buyQuiver] npc.getItem(" + quiverCode + ") => " + (buyItem ? buyItem.name + " (classid=" + buyItem.classid + ")" : "null"));
           if (buyItem) buyItem.buy();
         }
 
