@@ -1346,16 +1346,12 @@ const Town = {
     let repairAction = me.needRepair();
     force && repairAction.indexOf("repair") === -1 && repairAction.push("repair");
 
-    console.log("[Town.repair] repairAction=" + JSON.stringify(repairAction));
-
     if (!repairAction || !repairAction.length) return true;
 
     for (let i = 0; i < repairAction.length; i++) {
       let action = repairAction[i];
-      let colonIdx = action.indexOf(":");
-      let actionKey = colonIdx !== -1 ? action.substring(0, colonIdx) : action;
 
-      switch (actionKey) {
+      switch (action) {
       case "repair":
         me.act === 3 && Town.goToTown(me.accessToAct(4) ? 4 : 2);
         npc = Town.initNPC("Repair", "repair");
@@ -1365,52 +1361,79 @@ const Town = {
         break;
       case "buyQuiver":
         {
-          let targetSlot = colonIdx !== -1 ? parseInt(action.substring(colonIdx + 1), 10) : 0;
-          me.switchWeapons(targetSlot);
+          const slotGroups = [
+            { locs: [sdk.body.RightArm, sdk.body.LeftArm], slot: sdk.player.slot.Main },
+            { locs: [sdk.body.RightArmSecondary, sdk.body.LeftArmSecondary], slot: sdk.player.slot.Secondary },
+          ];
 
-          let armLoc = targetSlot === 0 ? sdk.body.RightArm : sdk.body.RightArmSecondary;
-          let quiverLoc = targetSlot === 0 ? sdk.body.LeftArm : sdk.body.LeftArmSecondary;
-          let bowType = null;
-          let equipped = me.getItem(-1, sdk.items.mode.Equipped);
-
-          if (equipped) {
-            do {
-              if (equipped.bodylocation === armLoc) {
-                if (equipped.itemType === sdk.items.type.Bow || equipped.itemType === sdk.items.type.AmazonBow) {
-                  bowType = "bow";
-                } else if (equipped.itemType === sdk.items.type.Crossbow) {
-                  bowType = "crossbow";
-                }
-                break;
-              }
-            } while (equipped.getNext());
-          }
-
-          if (!bowType) break;
-
-          let quiverCode = bowType === "bow" ? "aqv" : "cqv";
-          console.log("[buyQuiver] targetSlot=" + targetSlot + " bowType=" + bowType + " quiverCode=" + quiverCode);
+          let targetSlot = -1;
+          let quiverCode = null;
           let myQuiver = null;
-          equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
-          if (equipped) {
-            do {
-              if (equipped.bodylocation === quiverLoc) {
-                myQuiver = equipped;
-                break;
-              }
-            } while (equipped.getNext());
+          for (const { locs, slot } of slotGroups) {
+            let bowType = null;
+            let equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+            if (equipped) {
+              do {
+                if (locs.includes(equipped.bodylocation)) {
+                  if (equipped.itemType === sdk.items.type.Bow
+                    || equipped.itemType === sdk.items.type.AmazonBow) {
+                    bowType = "bow";
+                    break;
+                  } else if (equipped.itemType === sdk.items.type.Crossbow) {
+                    bowType = "xbow";
+                    break;
+                  }
+                }
+              } while (equipped.getNext());
+            }
+
+            if (!bowType) continue;
+
+            const quiverType = bowType === "bow"
+              ? sdk.items.type.BowQuiver
+              : sdk.items.type.CrossbowQuiver;
+            const code = bowType === "bow" ? "aqv" : "cqv";
+            let foundQuiver = null;
+            equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+            if (equipped) {
+              do {
+                if (locs.includes(equipped.bodylocation)
+                  && equipped.itemType === quiverType) {
+                  foundQuiver = copyUnit(equipped);
+                  break;
+                }
+              } while (equipped.getNext());
+            }
+
+            if (!foundQuiver) {
+              targetSlot = slot;
+              quiverCode = code;
+              break;
+            }
+
+            const quantity = foundQuiver.getStat(sdk.stats.Quantity);
+            if (typeof quantity === "number"
+              && quantity * 100 / getBaseStat("items", foundQuiver.classid, "maxstack") <= Config.RepairPercent) {
+              targetSlot = slot;
+              quiverCode = code;
+              myQuiver = foundQuiver;
+              break;
+            }
           }
 
-          console.log("[buyQuiver] myQuiver before drop: " + (myQuiver ? myQuiver.name + " (gid=" + myQuiver.gid + ")" : "none"));
+          if (targetSlot === -1) break;
+
+          me.switchWeapons(targetSlot);
           if (myQuiver) myQuiver.drop();
 
           npc = Town.initNPC("Repair", "repair");
           if (!npc) return false;
 
-          let buyItem = npc.getItem(quiverCode);
-          console.log("[buyQuiver] npc.getItem(" + quiverCode + ") => " + (buyItem ? buyItem.name + " (classid=" + buyItem.classid + ")" : "null"));
-          if (buyItem) buyItem.buy();
+          let quiverItem = npc.getItem(quiverCode);
+          if (quiverItem) quiverItem.buy();
         }
 
         break;

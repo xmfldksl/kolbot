@@ -582,53 +582,60 @@ me.needRepair = function () {
   }
   const canAfford = me.gold >= me.getRepairCost();
 
-  // Arrow/Bolt check - each weapon slot independently
-  const slotDefs = [
-    { bowLoc: sdk.body.RightArm, quiverLoc: sdk.body.LeftArm, slot: 0 },
-    { bowLoc: sdk.body.RightArmSecondary, quiverLoc: sdk.body.LeftArmSecondary, slot: 1 }
-  ];
+  // Arrow/Bolt check
+  if (Attack.usingBow()) {
+    const slotGroups = [
+      [sdk.body.RightArm, sdk.body.LeftArm],
+      [sdk.body.RightArmSecondary, sdk.body.LeftArmSecondary],
+    ];
 
-  for (let s = 0; s < slotDefs.length; s++) {
-    const slotDef = slotDefs[s];
-    let bowType = null;
-    let equipped = me.getItem(-1, sdk.items.mode.Equipped);
+    for (const locs of slotGroups) {
+      let bowType = null;
+      let equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
-    if (equipped) {
-      do {
-        if (equipped.bodylocation === slotDef.bowLoc) {
-          if (equipped.itemType === sdk.items.type.Bow || equipped.itemType === sdk.items.type.AmazonBow) {
-            bowType = "bow";
-          } else if (equipped.itemType === sdk.items.type.Crossbow) {
-            bowType = "crossbow";
+      if (equipped) {
+        do {
+          if (locs.includes(equipped.bodylocation)) {
+            if (equipped.itemType === sdk.items.type.Bow
+              || equipped.itemType === sdk.items.type.AmazonBow) {
+              bowType = "bow";
+              break;
+            } else if (equipped.itemType === sdk.items.type.Crossbow) {
+              bowType = "xbow";
+              break;
+            }
           }
-          break;
-        }
-      } while (equipped.getNext());
-    }
+        } while (equipped.getNext());
+      }
 
-    if (!bowType) continue;
+      if (!bowType) continue;
 
-    const quiverItemType = bowType === "bow" ? sdk.items.type.BowQuiver : sdk.items.type.CrossbowQuiver;
-    let quiver = null;
-    equipped = me.getItem(-1, sdk.items.mode.Equipped);
+      const quiverType = bowType === "bow"
+        ? sdk.items.type.BowQuiver
+        : sdk.items.type.CrossbowQuiver;
+      let myQuiver = null;
+      equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
-    if (equipped) {
-      do {
-        if (equipped.bodylocation === slotDef.quiverLoc && equipped.itemType === quiverItemType) {
-          quiver = equipped;
-          break;
-        }
-      } while (equipped.getNext());
-    }
+      if (equipped) {
+        do {
+          if (locs.includes(equipped.bodylocation)
+            && equipped.itemType === quiverType) {
+            myQuiver = equipped;
+            break;
+          }
+        } while (equipped.getNext());
+      }
 
-    if (!quiver) {
-      repairAction.push("buyQuiver:" + slotDef.slot);
-    } else {
-      let quantity = quiver.getStat(sdk.stats.Quantity);
+      if (!myQuiver) {
+        repairAction.push("buyQuiver");
+        break;
+      }
 
+      const quantity = myQuiver.getStat(sdk.stats.Quantity);
       if (typeof quantity === "number"
-        && quantity * 100 / getBaseStat("items", quiver.classid, "maxstack") <= Config.RepairPercent) {
-        repairAction.push("buyQuiver:" + slotDef.slot);
+        && quantity * 100 / getBaseStat("items", myQuiver.classid, "maxstack") <= Config.RepairPercent) {
+        repairAction.push("buyQuiver");
+        break;
       }
     }
   }
