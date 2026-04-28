@@ -581,25 +581,54 @@ me.needRepair = function () {
     me.cancel();
   }
   const canAfford = me.gold >= me.getRepairCost();
-  const quiverType = { bow: "aqv", crossbow: "cqv" };
 
-  // Arrow/Bolt check
-  const bowCheck = Attack.usingBow();
+  // Arrow/Bolt check - each weapon slot independently
+  const slotDefs = [
+    { bowLoc: sdk.body.RightArm, quiverLoc: sdk.body.LeftArm, slot: 0 },
+    { bowLoc: sdk.body.RightArmSecondary, quiverLoc: sdk.body.LeftArmSecondary, slot: 1 }
+  ];
 
-  if (bowCheck) {
-    let quiver;
-    if (quiverType[bowCheck]) {
-      quiver = me.getItem(quiverType[bowCheck], sdk.items.mode.Equipped);
+  for (let s = 0; s < slotDefs.length; s++) {
+    const slotDef = slotDefs[s];
+    let bowType = null;
+    let equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+    if (equipped) {
+      do {
+        if (equipped.bodylocation === slotDef.bowLoc) {
+          if (equipped.itemType === sdk.items.type.Bow || equipped.itemType === sdk.items.type.AmazonBow) {
+            bowType = "bow";
+          } else if (equipped.itemType === sdk.items.type.Crossbow) {
+            bowType = "crossbow";
+          }
+          break;
+        }
+      } while (equipped.getNext());
     }
 
-    if (!quiver) { // Out of arrows/bolts
-      repairAction.push("buyQuiver");
+    if (!bowType) continue;
+
+    const quiverItemType = bowType === "bow" ? sdk.items.type.BowQuiver : sdk.items.type.CrossbowQuiver;
+    let quiver = null;
+    equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+    if (equipped) {
+      do {
+        if (equipped.bodylocation === slotDef.quiverLoc && equipped.itemType === quiverItemType) {
+          quiver = equipped;
+          break;
+        }
+      } while (equipped.getNext());
+    }
+
+    if (!quiver) {
+      repairAction.push("buyQuiver:" + slotDef.slot);
     } else {
       let quantity = quiver.getStat(sdk.stats.Quantity);
 
       if (typeof quantity === "number"
         && quantity * 100 / getBaseStat("items", quiver.classid, "maxstack") <= Config.RepairPercent) {
-        repairAction.push("buyQuiver");
+        repairAction.push("buyQuiver:" + slotDef.slot);
       }
     }
   }

@@ -1348,8 +1348,12 @@ const Town = {
 
     if (!repairAction || !repairAction.length) return true;
 
-    for (let action of repairAction) {
-      switch (action) {
+    for (let i = 0; i < repairAction.length; i++) {
+      let action = repairAction[i];
+      let colonIdx = action.indexOf(":");
+      let actionKey = colonIdx !== -1 ? action.substring(0, colonIdx) : action;
+
+      switch (actionKey) {
       case "repair":
         me.act === 3 && Town.goToTown(me.accessToAct(4) ? 4 : 2);
         npc = Town.initNPC("Repair", "repair");
@@ -1358,18 +1362,50 @@ const Town = {
 
         break;
       case "buyQuiver":
-        let bowCheck = Attack.usingBow();
+        {
+          let targetSlot = colonIdx !== -1 ? parseInt(action.substring(colonIdx + 1), 10) : 0;
+          me.switchWeapons(targetSlot);
 
-        if (bowCheck) {
-          let quiver = bowCheck === "bow" ? "aqv" : "cqv";
-          let myQuiver = me.getItem(quiver, sdk.items.mode.Equipped);
-          !!myQuiver && myQuiver.drop();
-          
+          let armLoc = targetSlot === 0 ? sdk.body.RightArm : sdk.body.RightArmSecondary;
+          let quiverLoc = targetSlot === 0 ? sdk.body.LeftArm : sdk.body.LeftArmSecondary;
+          let bowType = null;
+          let equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+          if (equipped) {
+            do {
+              if (equipped.bodylocation === armLoc) {
+                if (equipped.itemType === sdk.items.type.Bow || equipped.itemType === sdk.items.type.AmazonBow) {
+                  bowType = "bow";
+                } else if (equipped.itemType === sdk.items.type.Crossbow) {
+                  bowType = "crossbow";
+                }
+                break;
+              }
+            } while (equipped.getNext());
+          }
+
+          if (!bowType) break;
+
+          let quiverCode = bowType === "bow" ? "aqv" : "cqv";
+          let myQuiver = null;
+          equipped = me.getItem(-1, sdk.items.mode.Equipped);
+
+          if (equipped) {
+            do {
+              if (equipped.bodylocation === quiverLoc) {
+                myQuiver = equipped;
+                break;
+              }
+            } while (equipped.getNext());
+          }
+
+          if (myQuiver) myQuiver.drop();
+
           npc = Town.initNPC("Repair", "repair");
           if (!npc) return false;
 
-          quiver = npc.getItem(quiver);
-          !!quiver && quiver.buy();
+          let buyItem = npc.getItem(quiverCode);
+          if (buyItem) buyItem.buy();
         }
 
         break;
