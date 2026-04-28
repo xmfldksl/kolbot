@@ -902,14 +902,16 @@ const Town = {
     if (unids.length < Config.CainID.MinUnids) return false;
 
     // Check if we may use Cain - kept unid items
-    for (let item of unids) {
+    for (let _i = 0; _i < unids.length; _i++) {
+      let item = unids[_i];
       if (Pickit.checkItem(item).result > 0) return false;
     }
 
     let cain = Town.initNPC("CainID", "cainID");
     if (!cain) return false;
 
-    for (let item of unids) {
+    for (let _i = 0; _i < unids.length; _i++) {
+      let item = unids[_i];
       let result = Pickit.checkItem(item);
 
       switch (result.result) {
@@ -991,7 +993,8 @@ const Town = {
 
     console.log("ÿc4MiniShopBotÿc0: Scanning " + npc.itemcount + " items.");
 
-    for (let item of items) {
+    for (let _i = 0; _i < items.length; _i++) {
+      let item = items[_i];
       const { result, line } = Pickit.checkItem(item);
 
       switch (result) {
@@ -1026,7 +1029,8 @@ const Town = {
     if (!Town.needGamble() || Config.GambleItems.length === 0) return true;
     if (Town.gambleIds.size === 0) {
       // change text to classid
-      for (let item of Config.GambleItems) {
+      for (let _i = 0; _i < Config.GambleItems.length; _i++) {
+        let item = Config.GambleItems[_i];
         if (isNaN(item)) {
           if (NTIPAliasClassID.hasOwnProperty(item.replace(/\s+/g, "").toLowerCase())) {
             Town.gambleIds.add(NTIPAliasClassID[item.replace(/\s+/g, "").toLowerCase()]);
@@ -1067,7 +1071,8 @@ const Town = {
           }
         } while (item.getNext());
 
-        for (let item of items) {
+        for (let _gi = 0; _gi < items.length; _gi++) {
+          let item = items[_gi];
           if (!Storage.Inventory.CanFit(item)) {
             return false;
           }
@@ -1126,7 +1131,8 @@ const Town = {
   getGambledItem: function (list = []) {
     let items = me.findItems(-1, sdk.items.mode.inStorage, sdk.storage.Inventory);
 
-    for (let item of items) {
+    for (let _i = 0; _i < items.length; _i++) {
+      let item = items[_i];
       if (list.indexOf(item.gid) === -1) {
         for (let j = 0; j < 3; j += 1) {
           if (item.identified) {
@@ -1370,7 +1376,9 @@ const Town = {
           let quiverCode = null;
           let myQuiver = null;
 
-          for (const { locs, slot } of slotGroups) {
+          for (let _sgi = 0; _sgi < slotGroups.length; _sgi++) {
+            let locs = slotGroups[_sgi].locs;
+            let slot = slotGroups[_sgi].slot;
             let bowType = null;
             let equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
@@ -1560,7 +1568,8 @@ const Town = {
     if (items && items.length) {
       Config.SortSettings.SortStash && Storage.Stash.SortItems();
       
-      for (let item of items) {
+      for (let _i = 0; _i < items.length; _i++) {
+        let item = items[_i];
         if (Town.canStash(item)) {
           let result = false;
           let pickResult = Pickit.checkItem(item).result;

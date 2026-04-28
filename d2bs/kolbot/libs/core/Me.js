@@ -589,7 +589,8 @@ me.needRepair = function () {
       [sdk.body.RightArmSecondary, sdk.body.LeftArmSecondary],
     ];
 
-    for (const locs of slotGroups) {
+    for (let _sgi = 0; _sgi < slotGroups.length; _sgi++) {
+      let locs = slotGroups[_sgi];
       let bowType = null;
       let equipped = me.getItem(-1, sdk.items.mode.Equipped);
 
