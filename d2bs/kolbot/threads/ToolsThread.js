@@ -65,6 +65,7 @@ function main () {
     "threads/antihostile.js",
     "threads/party.js",
     "threads/rushthread.js",
+    "threads/ConsoleAutoHide.js",
     "libs\\\\modules\\workers\\guard.js" // why?
   ];
 
