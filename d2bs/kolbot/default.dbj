@@ -158,6 +158,10 @@ function main () {
 
   // Load threads
   load("threads/ToolsThread.js");
+  let _consoleAutoHide = getScript("threads/ConsoleAutoHide.js");
+  if (!_consoleAutoHide || !_consoleAutoHide.running) {
+    load("threads/ConsoleAutoHide.js");
+  }
   if (Config.TownCheck || Config.TownHP > 0 || Config.TownMP > 0) {
     require("libs/modules/workers/TownChicken");
   }
