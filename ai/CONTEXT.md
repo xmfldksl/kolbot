@@ -11,12 +11,13 @@
 
 ## 최근 결정
 - ai/ 공유 공간 도입 (ai/DECISIONS.md 참조)
+- GitHub 기본 브랜치 my-changes로 변경 (ai/DECISIONS.md 참조)
 
 ## 미해결 이슈
 - 없음
 
 ## 다음 할 일
-- Claude 프로젝트 지식에 이 저장소의 ai/ 폴더 추가 후 Sync (사용자)
+- 없음
 
 ## 최신 문서
 - 인수인계: 없음
