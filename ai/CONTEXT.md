@@ -1,6 +1,6 @@
 # CONTEXT
 
-최종 갱신: 2026-09-24 / 작성자: claudecode
+최종 갱신: 2026-11-01 / 작성자: claude
 (덮어쓰는 유일한 파일. 50줄 이내 유지.)
 
 ## 현재 목표
@@ -12,6 +12,7 @@
 ## 최근 결정
 - ai/ 공유 공간 도입 (ai/DECISIONS.md 참조)
 - GitHub 기본 브랜치 my-changes로 변경 (ai/DECISIONS.md 참조)
+- Claude 채팅의 MCP 직접 commit 도입 (ai/DECISIONS.md 참조)
 
 ## 미해결 이슈
 - 없음
